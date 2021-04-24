@@ -1,0 +1,7 @@
+from enum import Enum
+
+
+class JWTConf(Enum):
+    SECRET_KEY = "c3c788295b46c7f8eaac81933de89f6a07d80765129c8d7201350e93017398a4"
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30
