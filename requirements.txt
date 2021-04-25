@@ -5,3 +5,5 @@ passlib[bcrypt]
 sqlalchemy
 databases[postgresql]
 python-multipart
+aiofiles
+jinja2
