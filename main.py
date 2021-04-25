@@ -5,9 +5,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from .settings import JWTConf
-from .apimodels import Token, TokenData, User
-from . import authentication as Auth
+from app.settings import JWTConf
+from apimodels import Token, TokenData, User
+from app import authentication as Auth
 
 DB = None
 app = FastAPI()
