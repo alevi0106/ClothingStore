@@ -21,6 +21,18 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/login", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/cart", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("cart.html", {"request": request})
+
+@app.get("/product-details", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("product-details.html", {"request": request})
     
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
