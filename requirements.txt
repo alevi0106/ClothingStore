@@ -2,5 +2,4 @@ fastapi
 uvicorn[standard]
 python-jose
 passlib[bcrypt]
-sqlalchemy
-databases[postgresql]
+ormar[sqlite]
