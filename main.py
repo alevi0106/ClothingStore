@@ -1,18 +1,27 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from .settings import JWTConf
-from .apimodels import Token, TokenData, User
-from . import authentication as Auth
+from app.settings import JWTConf
+from apimodels import Token, TokenData
+from app import authentication as Auth
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 DB = None
 app = FastAPI()
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
+@app.get("/", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+    
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
@@ -45,10 +54,10 @@ async def get_current_user(token: str = Depends(Auth.oauth2_scheme)):
     return user
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+# async def get_current_active_user(current_user: User = Depends(get_current_user)):
+#     if current_user.disabled:
+#         raise HTTPException(status_code=400, detail="Inactive user")
+#     return current_user
 
 
 def authenticate_user(username: str, password: str):
