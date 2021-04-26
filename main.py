@@ -31,14 +31,14 @@ async def shutdown() -> None:
         await db.disconnect()
 
 
-@app.post("/signup", response_model=User)
+@app.post("/signup", response_model=User, response_model_exclude={"password"})
 async def signup(user: User):
     validate_password(user.password)
     validate_email(user.email)
     validate_phone(user.phone)
     user.password = get_password_hash(user.password)
     await user.save()
-    return user.dict(exclude={'password'})
+    return user
 
 
 @app.post("/login")
