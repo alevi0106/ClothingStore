@@ -1,12 +1,10 @@
 import logging
 import uvicorn
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from sql.models import database, User
-from src.validations import validate_password, validate_email, validate_phone
 from src.authentication import verify_password, get_password_hash, create_access_token, extract_id_from_token
 
 logger = logging.getLogger()
@@ -32,39 +30,51 @@ async def shutdown() -> None:
 
 
 @app.post("/signup", response_model=User, response_model_exclude={"password"})
-async def signup(user: User):
-    validate_password(user.password)
-    validate_email(user.email)
-    validate_phone(user.phone)
-    user.password = get_password_hash(user.password)
+async def signup(username: str = Form(...),
+                 password_plain: str = Form(..., min_length=8,
+                                            regex="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"),
+                 email: str = Form(..., regex="^([a-z0-9]+@[a-z0-9]+\.[a-z]+)$"),
+                 phone: str = Form(..., regex="^[0-9]{10}$")):
+    hashed_password = get_password_hash(password_plain)
+    user = User(username=username, password=hashed_password, email=email, phone=phone)
+    # TODO: Send email to confirm
     await user.save()
     return user
 
 
-@app.post("/login")
+@app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await User.objects.get(username=form_data.username)
-    if not user or not verify_password(form_data.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Incorrect username or password",
-                            headers={"WWW-Authenticate": "Bearer"},)
-    access_token = create_access_token(data={"sub": user.id})
-    return {"access_token": access_token, "token_type": "bearer"}
+    verify_password(form_data.password, user.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},)
+    return await renew_access_token(user)
 
 
-@app.get("/getusers")
-async def get_user(username: str):
-    return await User.objects.get(username=username)
-
-
-async def get_user_from_token(token: str = Depends(oauth2_scheme)):
+async def get_user_from_token(token: str = Depends(oauth2_scheme)):  # depends oauth2scheme verifies token
     try:
-        id = extract_id_from_token(token)
+        email = extract_id_from_token(token)
     except:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Could not validate credentials",
                             headers={"WWW-Authenticate": "Bearer"},)
-    return await User.objects.get(id=id)
+    return await User.objects.get(email=email)
+
+
+@app.get("/getusers", response_model=User)
+async def get_user(user: User = Depends(get_user_from_token)):
+    """Meant for debugging. Will be removed later"""
+    return user
+
+
+@app.get("/refreshtoken")
+async def renew_access_token(user: User = Depends(get_user)):
+    access_token = create_access_token(data={"sub": user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 
 if __name__ == '__main__':
