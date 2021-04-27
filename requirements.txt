@@ -4,3 +4,5 @@ python-jose
 passlib[bcrypt]
 ormar[sqlite]
 python-multipart
+aiofiles
+jinja2

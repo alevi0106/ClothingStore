@@ -7,10 +7,12 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel= "stylesheet" href= "./style.css">
+    <link rel= "stylesheet" href= "{{ url_for('static', path='/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
     <title>Hello, world!</title>
   </head>
   <body>
+    {% include 'navbar.html' %}
     <div class="small-container cart-page my-4 mx-5">
         <table>
             <tr>
@@ -21,7 +23,7 @@
             <tr>
                 <td>
                     <div class="cart-info">
-                        <img src="Images/3.jpg">
+                        <img src="../static/img/Images/3.jpg">
                         <div>
                             <p>Sone T-Shirt</p>
                             <small>Price: Rs.199</small><br>
@@ -35,7 +37,7 @@
             <tr>
                 <td>
                     <div class="cart-info">
-                        <img src="Images/1.jpg">
+                        <img src="../static/img/Images/1.jpg">
                         <div>
                             <p>Sone T-Shirt</p>
                             <small>Price: Rs.199</small><br>
@@ -49,7 +51,7 @@
             <tr>
                 <td>
                     <div class="cart-info">
-                        <img src="Images/4.jpg">
+                        <img src="../static/img/Images/4.jpg">
                         <div>
                             <p>Sone T-Shirt</p>
                             <small>Price: Rs.199</small><br>
@@ -79,6 +81,7 @@
         </div>
     </div>
 
+    {% include 'footer.html' %}
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

@@ -1,8 +1,11 @@
 import logging
 import uvicorn
 from fastapi import FastAPI
-from fastapi import Depends, FastAPI, HTTPException, status, Form
+from fastapi import Depends, FastAPI, HTTPException, status, Form, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from sql.models import database, User
 from src.authentication import verify_password, get_password_hash, create_access_token, extract_id_from_token
@@ -41,7 +44,7 @@ async def signup(username: str = Form(...),
     await user.save()
     return user
 
-
+    
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await User.objects.get(username=form_data.username)
@@ -75,6 +78,29 @@ async def renew_access_token(user: User = Depends(get_user)):
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/cart", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("cart.html", {"request": request})
+
+
+@app.get("/product-details", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("product-details.html", {"request": request})
 
 
 if __name__ == '__main__':
