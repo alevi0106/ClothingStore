@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from sql.models import database, User
 from src.authentication import verify_password, get_password_hash, create_access_token, extract_id_from_token
+from src.settings import EMAIL_REGEX, PASSWORD_REGEX, PHONE_REGEX
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -33,13 +34,11 @@ async def shutdown() -> None:
 
 
 @app.post("/signup", response_model=User, response_model_exclude={"password"})
-async def signup(username: str = Form(...),
-                 password_plain: str = Form(..., min_length=8,
-                                            regex="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"),
-                 email: str = Form(..., regex="^([a-z0-9]+@[a-z0-9]+\.[a-z]+)$"),
-                 phone: str = Form(..., regex="^[0-9]{10}$")):
+async def signup(email: str = Form(..., regex=EMAIL_REGEX),
+                 password_plain: str = Form(..., min_length=8, regex=PASSWORD_REGEX),
+                 phone: str = Form(..., regex=PHONE_REGEX)):
     hashed_password = get_password_hash(password_plain)
-    user = User(username=username, password=hashed_password, email=email, phone=phone)
+    user = User(password=hashed_password, email=email, phone=phone)
     # TODO: Send email to confirm
     await user.save()
     return user
@@ -47,7 +46,7 @@ async def signup(username: str = Form(...),
     
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await User.objects.get(username=form_data.username)
+    user = await User.objects.get(email=form_data.username)
     verify_password(form_data.password, user.password)
     if not user:
         raise HTTPException(
