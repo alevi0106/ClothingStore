@@ -7,9 +7,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from sql.models import database, User
+from sql.models import Product, database, User
+from sql.dbaccess import get_confirmed_user, get_unconfirmed_user
 from src.authentication import verify_password, get_password_hash, create_access_token, extract_id_from_token
-from src.settings import EMAIL_REGEX, PASSWORD_REGEX, PHONE_REGEX
+from src.email_validation import sendemail
+from src.settings import EMAIL_REGEX, PASSWORD_REGEX, PHONE_REGEX, DOMAIN_URL
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -39,14 +41,25 @@ async def signup(email: str = Form(..., regex=EMAIL_REGEX),
                  phone: str = Form(..., regex=PHONE_REGEX)):
     hashed_password = get_password_hash(password_plain)
     user = User(password=hashed_password, email=email, phone=phone)
-    # TODO: Send email to confirm
+    token = create_access_token(user.email, expires_minutes=10)
+    confirmation_link = DOMAIN_URL.strip("/") + "/confirmaccount/" + token
+    sendemail(user.email, confirmation_link)  # TODO: Should make it async
     await user.save()
     return user
 
-    
+
+@app.get("/confirmaccount/{token}", response_model_exclude={"password"})
+async def confirm_account(token: str):
+    email = extract_id_from_token(token)  # TODO:  Handle errors
+    user = await get_unconfirmed_user(email)
+    user.confirmed = True
+    await user.save()
+    return user
+
+
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await User.objects.get(email=form_data.username)
+    user = await get_confirmed_user(form_data.username)
     verify_password(form_data.password, user.password)
     if not user:
         raise HTTPException(
@@ -63,7 +76,7 @@ async def get_user_from_token(token: str = Depends(oauth2_scheme)):  # depends o
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Could not validate credentials",
                             headers={"WWW-Authenticate": "Bearer"},)
-    return await User.objects.get(email=email)
+    return await get_confirmed_user(email)
 
 
 @app.get("/getusers", response_model=User)
@@ -74,8 +87,26 @@ async def get_user(user: User = Depends(get_user_from_token)):
 
 @app.get("/refreshtoken")
 async def renew_access_token(user: User = Depends(get_user)):
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(user.email)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/forgotpassword", response_model=User, response_model_exclude={"password"})
+async def forgot_password(email: str = Form(...)):
+    user = get_confirmed_user(email)
+    user.confirmed = False
+    confirmation_link = DOMAIN_URL.strip("/") + "/confirmaccount/" + token
+    sendemail(user.email, confirmation_link)  # TODO: Should make it async
+    await user.save()
+    return user   
+
+
+# TODO: admin login
+
+
+@app.get("/products", response_model=Product)
+async def get_products():
+    return await Product.objects.limit(20).all()
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

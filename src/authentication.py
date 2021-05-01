@@ -19,17 +19,17 @@ def get_password_hash(password: str):
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_minutes: Optional[int] = None):
-    to_encode = data.copy()
+def create_access_token(email: str, expires_minutes: Optional[int] = None):
+    to_encode = {"sub": email}
     if expires_minutes:
         expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_minutes)
     else:
         expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": str(expire)})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
-def extract_id_from_token(token: str):
+def extract_id_from_token(token: str) -> str:
     payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
     return payload.get("sub")

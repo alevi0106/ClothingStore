@@ -10,6 +10,8 @@ EMAIL_REGEX = "^([a-z0-9]+@[a-z0-9]+\.[a-z]+)$"
 PASSWORD_REGEX = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"
 PHONE_REGEX = "^[0-9]{10}$"
 
+DOMAIN_URL = ""
+
 
 # kirsche@email.com
 # Kirschepass@123

@@ -21,6 +21,7 @@ class User(ormar.Model):
     email: str = ormar.String(max_length=255, unique=True)
     password: str = ormar.String(max_length=255)
     phone: str = ormar.String(min_length=10, max_length=10)
+    confirmed: bool = ormar.Boolean(default=False)
 
 
 class Product(ormar.Model):
