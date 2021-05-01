@@ -81,7 +81,7 @@ async def renew_access_token(user: User = Depends(get_user)):
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
+adminTemplates = Jinja2Templates(directory="templates\product-admin")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
@@ -102,6 +102,21 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return templates.TemplateResponse("product-details.html", {"request": request})
 
+@app.get("/admin", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/admin/account", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("account.html", {"request": request})
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/admin/add-product", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("add-product.html", {"request": request})
 
 if __name__ == '__main__':
     uvicorn.run(app, host="127.0.0.1", port=8000)
