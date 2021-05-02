@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from sql.models import database, User
+from sql.models import Products, database, User
 from src.authentication import verify_password, get_password_hash, create_access_token, extract_id_from_token
 
 logger = logging.getLogger()
@@ -117,6 +117,15 @@ async def read_item(request: Request):
 @app.get("/admin/add-product", response_class=HTMLResponse)
 async def read_item(request: Request):
     return adminTemplates.TemplateResponse("add-product.html", {"request": request})
+
+@app.post("/admin/add-product", response_model=Products)
+async def add_product(name: str = Form(...),
+                 description: str = Form(...),
+                 price: float = Form(...),
+                 quantity: int = Form(...)):
+    product = Products(name=name, description=description, price=price, quantity=quantity)
+    await product.save()
+    return product
 
 if __name__ == '__main__':
     uvicorn.run(app, host="127.0.0.1", port=8000)
