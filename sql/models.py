@@ -24,6 +24,27 @@ class User(ormar.Model):
     confirmed: bool = ormar.Boolean(default=False)
 
 
+class UserAddress(ormar.Model):
+    class Meta:
+        tablename = "useraddress"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    user: User = ormar.ForeignKey(User, nullable=False)
+    address: str = ormar.Text()
+
+
+class Admin(ormar.Model):
+    class Meta:
+        tablename = "admins"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    user: User = ormar.ForeignKey(User, nullable=False)
+
+
 class Product(ormar.Model):
     class Meta:
         tablename = "products"
@@ -37,6 +58,17 @@ class Product(ormar.Model):
     quantity: int = ormar.Integer()
 
 
+class ProductImage(ormar.Model):
+    class Meta:
+        tablename = "productimages"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    product: Product = ormar.ForeignKey(Product, nullable=False)
+    path: str = ormar.String(max_length=50)
+
+
 class Cart(ormar.Model):
     class Meta:
         tablename = "carts"
@@ -44,7 +76,43 @@ class Cart(ormar.Model):
         database = database
 
     id: int = ormar.Integer(primary_key=True)
-    userid: User = ormar.ForeignKey(User)
+    user: User = ormar.ForeignKey(User, nullable=False)
+    product: Product = ormar.ForeignKey(Product, nullable=False)
+
+
+class Category(ormar.Model):
+    class Meta:
+        tablename = "categories"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    product: Product = ormar.ForeignKey(Product, nullable=False)
+    name: str = ormar.String(max_length=10)
+
+
+class Order(ormar.Model):
+    class Meta:
+        tablename = "orders"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    product: Product = ormar.ForeignKey(Product, nullable=False)
+    price: float = ormar.Float()
+    quantity: int = ormar.Integer()
+
+
+class Payment(ormar.Model):
+    class Meta:
+        tablename = "payments"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    user: User = ormar.ForeignKey(User, nullable=False)
+    order: Order = ormar.ForeignKey(Order, nullable=False)
+
 
 
 metadata.create_all(engine)
