@@ -1,13 +1,15 @@
 import logging
+from typing import Optional
 import uvicorn
 from fastapi import FastAPI
-from fastapi import Depends, FastAPI, HTTPException, status, Form, Request
+from fastapi import Depends, FastAPI, HTTPException, status, Form, Request, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from aiofiles import async_open
 
-from sql.models import Product, database, User
+from sql.models import Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -167,10 +169,18 @@ async def read_item(request: Request):
 
 @app.post("/admin/add-product", response_model=Product)
 async def add_product(name: str = Form(...),
-                 description: str = Form(...),
-                 price: float = Form(...),
-                 quantity: int = Form(...)):
+                      description: str = Form(...),
+                      price: float = Form(..., ge=0.0),
+                      quantity: int = Form(..., ge=0),
+                      image: Optional[UploadFile] = File(None)):
     product = Product(name=name, description=description, price=price, quantity=quantity)
+    if image:
+        path = f"/static/products/{image.filename}"
+        with async_open(path, 'wb') as fp:
+            image_bytes = await image.read()
+            await fp.write(image_bytes)
+        product_image = ProductImage(product=product, path=path)
+        await product_image.upsert()
     await product.upsert()
     return product
 
