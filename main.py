@@ -1,14 +1,19 @@
 import logging
+from typing import Optional
 import uvicorn
 from fastapi import FastAPI
-from fastapi import Depends, FastAPI, HTTPException, status, Form, Request
+from fastapi import Depends, FastAPI, HTTPException, status, Form, Request, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from aiofiles import async_open
 
-from sql.models import Products, database, User
-from src.authentication import verify_password, get_password_hash, create_access_token, extract_id_from_token
+from sql.models import Product, ProductImage, database, User
+from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
+from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
+from src.email_validation import sendemail
+from src.settings import EMAIL_REGEX, PASSWORD_REGEX, PHONE_REGEX
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -33,21 +38,37 @@ async def shutdown() -> None:
 
 
 @app.post("/signup", response_model=User, response_model_exclude={"password"})
-async def signup(username: str = Form(...),
-                 password_plain: str = Form(..., min_length=8,
-                                            regex="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"),
-                 email: str = Form(..., regex="^([a-z0-9]+@[a-z0-9]+\.[a-z]+)$"),
-                 phone: str = Form(..., regex="^[0-9]{10}$")):
+async def signup(email: str = Form(..., regex=EMAIL_REGEX),
+                 password_plain: str = Form(..., min_length=8, regex=PASSWORD_REGEX),
+                 phone: str = Form(..., regex=PHONE_REGEX)):
     hashed_password = get_password_hash(password_plain)
-    user = User(username=username, password=hashed_password, email=email, phone=phone)
-    # TODO: Send email to confirm
+    user = User(password=hashed_password, email=email, phone=phone)
+    confirmation_link = create_email_confirmation_link(user.email)
+    sendemail(user.email, confirmation_link)  # TODO: Should make it async
     await user.save()
     return user
 
-    
+
+@app.get("/confirmaccount/{token}", response_model_exclude={"password"})
+async def confirm_account(token: str):
+    try:
+        email = extract_id_from_token(token)  # TODO:  Handle errors
+    except:
+        # TODO: redirect to forgot password UI
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},)
+
+    user = await get_unconfirmed_user(email)
+    user.confirmed = True
+    await user.update()
+    return user
+
+
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await User.objects.get(username=form_data.username)
+    user = await get_confirmed_user(form_data.username)
     verify_password(form_data.password, user.password)
     if not user:
         raise HTTPException(
@@ -64,7 +85,7 @@ async def get_user_from_token(token: str = Depends(oauth2_scheme)):  # depends o
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Could not validate credentials",
                             headers={"WWW-Authenticate": "Bearer"},)
-    return await User.objects.get(email=email)
+    return await get_confirmed_user(email)
 
 
 @app.get("/getusers", response_model=User)
@@ -75,8 +96,36 @@ async def get_user(user: User = Depends(get_user_from_token)):
 
 @app.get("/refreshtoken")
 async def renew_access_token(user: User = Depends(get_user)):
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(user.email)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/forgotpassword", response_model=User, response_model_exclude={"password"})
+async def forgot_password(email: str = Form(...)):
+    user = await get_confirmed_user(email)
+    user.confirmed = False
+    confirmation_link = create_email_confirmation_link(user.email)    
+    sendemail(user.email, confirmation_link)  # TODO: Should make it async
+    await user.update()
+    return user
+
+
+@app.post("/adminlogin")
+async def admin_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await get_admin_user(form_data.username)
+    if user and user.admins and verify_password(form_data.password, user.password):
+        return await renew_access_token(user)
+    else:
+        raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},)
+
+
+
+@app.get("/products", response_model=Product)
+async def get_products():
+    return await Product.objects.limit(20).all()
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -118,13 +167,21 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return adminTemplates.TemplateResponse("add-product.html", {"request": request})
 
-@app.post("/admin/add-product", response_model=Products)
+@app.post("/admin/add-product", response_model=Product)
 async def add_product(name: str = Form(...),
-                 description: str = Form(...),
-                 price: float = Form(...),
-                 quantity: int = Form(...)):
-    product = Products(name=name, description=description, price=price, quantity=quantity)
-    await product.save()
+                      description: str = Form(...),
+                      price: float = Form(..., ge=0.0),
+                      quantity: int = Form(..., ge=0),
+                      image: Optional[UploadFile] = File(None)):
+    product = Product(name=name, description=description, price=price, quantity=quantity)
+    if image:
+        path = f"/static/products/{image.filename}"
+        with async_open(path, 'wb') as fp:
+            image_bytes = await image.read()
+            await fp.write(image_bytes)
+        product_image = ProductImage(product=product, path=path)
+        await product_image.upsert()
+    await product.upsert()
     return product
 
 if __name__ == '__main__':
