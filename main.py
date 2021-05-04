@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from sql.models import Admin, Product, database, User
+from sql.models import Product, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -49,10 +49,18 @@ async def signup(email: str = Form(..., regex=EMAIL_REGEX),
 
 @app.get("/confirmaccount/{token}", response_model_exclude={"password"})
 async def confirm_account(token: str):
-    email = extract_id_from_token(token)  # TODO:  Handle errors
+    try:
+        email = extract_id_from_token(token)  # TODO:  Handle errors
+    except:
+        # TODO: redirect to forgot password UI
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},)
+
     user = await get_unconfirmed_user(email)
     user.confirmed = True
-    await user.save()
+    await user.update()
     return user
 
 
@@ -92,18 +100,17 @@ async def renew_access_token(user: User = Depends(get_user)):
 
 @app.get("/forgotpassword", response_model=User, response_model_exclude={"password"})
 async def forgot_password(email: str = Form(...)):
-    user = get_confirmed_user(email)
+    user = await get_confirmed_user(email)
     user.confirmed = False
     confirmation_link = create_email_confirmation_link(user.email)    
     sendemail(user.email, confirmation_link)  # TODO: Should make it async
-    await user.save()
-    return user   
+    await user.update()
+    return user
 
 
 @app.post("/adminlogin")
 async def admin_login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await get_admin_user(form_data.username)
-    print(user)
     if user and user.admins and verify_password(form_data.password, user.password):
         return await renew_access_token(user)
     else:
