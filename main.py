@@ -128,7 +128,7 @@ async def get_products():
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
+adminTemplates = Jinja2Templates(directory="templates\product-admin")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
@@ -149,6 +149,30 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return templates.TemplateResponse("product-details.html", {"request": request})
 
+@app.get("/admin", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/admin/account", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("account.html", {"request": request})
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/admin/add-product", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return adminTemplates.TemplateResponse("add-product.html", {"request": request})
+
+@app.post("/admin/add-product", response_model=Products)
+async def add_product(name: str = Form(...),
+                 description: str = Form(...),
+                 price: float = Form(...),
+                 quantity: int = Form(...)):
+    product = Products(name=name, description=description, price=price, quantity=quantity)
+    await product.save()
+    return product
 
 if __name__ == '__main__':
     uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -114,5 +114,11 @@ class Payment(ormar.Model):
     order: Order = ormar.ForeignKey(Order, nullable=False)
 
 
+    id: int = ormar.Integer(primary_key=True)
+    name: str = ormar.String(max_length=255, unique=True)
+    description: str = ormar.Text()
+    price: float = ormar.Float()
+    quantity: int = ormar.Integer()
+
 
 metadata.create_all(engine)
