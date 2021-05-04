@@ -165,13 +165,13 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return adminTemplates.TemplateResponse("add-product.html", {"request": request})
 
-@app.post("/admin/add-product", response_model=Products)
+@app.post("/admin/add-product", response_model=Product)
 async def add_product(name: str = Form(...),
                  description: str = Form(...),
                  price: float = Form(...),
                  quantity: int = Form(...)):
-    product = Products(name=name, description=description, price=price, quantity=quantity)
-    await product.save()
+    product = Product(name=name, description=description, price=price, quantity=quantity)
+    await product.upsert()
     return product
 
 if __name__ == '__main__':
