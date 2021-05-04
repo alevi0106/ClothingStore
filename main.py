@@ -1,13 +1,14 @@
 import logging
-from typing import Optional
+import os
 import uvicorn
+import aiofiles
+from typing import Optional
 from fastapi import FastAPI
 from fastapi import Depends, FastAPI, HTTPException, status, Form, Request, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from aiofiles import async_open
 
 from sql.models import Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
@@ -174,14 +175,14 @@ async def add_product(name: str = Form(...),
                       quantity: int = Form(..., ge=0),
                       image: Optional[UploadFile] = File(None)):
     product = Product(name=name, description=description, price=price, quantity=quantity)
+    await product.upsert()
     if image:
-        path = f"/static/products/{image.filename}"
-        with async_open(path, 'wb') as fp:
+        path = os.path.join(os.path.dirname(__file__), f"static/products/{image.filename}")
+        async with aiofiles.open(path, 'wb') as fp:
             image_bytes = await image.read()
             await fp.write(image_bytes)
         product_image = ProductImage(product=product, path=path)
         await product_image.upsert()
-    await product.upsert()
     return product
 
 if __name__ == '__main__':
