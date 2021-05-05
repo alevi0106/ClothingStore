@@ -66,7 +66,7 @@ class ProductImage(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     product: Product = ormar.ForeignKey(Product, nullable=False)
-    path: str = ormar.String(max_length=50)
+    path: str = ormar.String(max_length=255)
 
 
 class Cart(ormar.Model):
