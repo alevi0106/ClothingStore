@@ -11,7 +11,7 @@ import aiofiles
 import os
 import time
 
-from sql.models import Product, ProductImage, database, User
+from sql.models import Category, Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -142,6 +142,11 @@ async def read_item(request: Request):
 @app.get("/login", response_class=HTMLResponse)
 async def read_item(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/categories")
+async def read_item(request: Request):
+    categories = await Category.objects.all()
+    return {"categories": categories}
 
 
 @app.get("/cart", response_class=HTMLResponse)
