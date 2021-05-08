@@ -172,7 +172,9 @@ async def read_item(request: Request):
 
 @app.get("/admin/add-product", response_class=HTMLResponse)
 async def read_item(request: Request):
-    return adminTemplates.TemplateResponse("add-product.html", {"request": request})
+    categories = await Category.objects.all()
+    categories = [category.name for category in categories]
+    return adminTemplates.TemplateResponse("add-product.html", {"request": request, "categories": categories})
 
 @app.post("/admin/add-product", response_model=Product)
 async def add_product(name: str = Form(...),
