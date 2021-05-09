@@ -35,7 +35,8 @@
                   </div>
                   <div class="form-group mb-3">
                     <label for="category">Category</label>
-                    <select class="custom-select tm-select-accounts" id="category" method="GET" action="/categories">
+                    <select class="custom-select tm-select-accounts" id="category" method="get" action="/categories?ctype='SIZE'">
+                      <option ignore>Select Something</option>
                       {% for category in categories %}
                       <option value= "{{category}}">{{category}}</option>
                       {% endfor %}

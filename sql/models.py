@@ -88,7 +88,7 @@ class Category(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     name: str = ormar.String(max_length=10)
-    type: str = ormar.String(max_length=10)
+    categorytype: str = ormar.String(max_length=10)
 
 class CategoryProductLink(ormar.Model):
     class Meta:

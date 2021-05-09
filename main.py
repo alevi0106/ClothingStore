@@ -143,9 +143,9 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/categories")
-async def read_item(request: Request):
-    categories = await Category.objects.all()
+@app.get("/categories/{ctype}")
+async def read_item(ctype: str):
+    categories = await Category.objects.filter(Category.categorytype == ctype).all()
     return {"categories": categories}
 
 
