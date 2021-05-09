@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
 
+
     <title>Hello, world!</title>
   </head>
   <body>
@@ -34,12 +35,13 @@
                     <textarea name = "description" class="form-control validate" rows="3" required></textarea>
                   </div>
                   <div class="form-group mb-3">
-                    <label for="category">Category</label>
-                    <select class="custom-select tm-select-accounts" id="category" method="get" action="/categories?ctype='SIZE'">
-                      <option ignore>Select Something</option>
-                      {% for category in categories %}
-                      <option value= "{{category}}">{{category}}</option>
-                      {% endfor %}
+                    <label for="size">Size</label>
+                    <select class="custom-select tm-select-accounts" id="size" onclick="PopulateDropDownList('size')" multiple>
+                    </select>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label for="gender">Gender</label>
+                    <select class="custom-select tm-select-accounts" id="gender" onclick="PopulateDropDownList('gender')" multiple>
                     </select>
                   </div>
                   <div class="row">
@@ -95,6 +97,7 @@
       </div>
     </div>
     <script>
+      
       function previewImages() {
         var preview = document.querySelector('#preview');
         if (this.files) {
@@ -117,6 +120,31 @@
         }
       }
       document.querySelector('#images').addEventListener("change", previewImages);
+      var clicked = false;
+      
+      async function PopulateDropDownList(ctype) {
+      //Build an array containing Customer records.
+      if(document.getElementById(ctype).length == 0){
+        await fetch("categories/"+ctype)
+        .then(response => response.json())  
+        .then(json => {
+            // console.log(json);
+            var categoryList = json["categories"];
+            var ddlCategory = document.getElementById(ctype);
+            //Add the Options to the DropDownList.
+            for (var i = 0; i < categoryList.length; i++) {
+                var option = document.createElement("OPTION");
+                //Set Customer Name in Text part.
+                option.innerHTML = categoryList[i].name;
+                //Set CustomerId in Value part.
+                option.value = categoryList[i].id;
+                //Add the Option element to DropDownList.
+                ddlCategory.options.add(option);
+            }
+            clicked = true;
+        });
+        }
+      }
     </script>
 
     <!-- Optional JavaScript -->
