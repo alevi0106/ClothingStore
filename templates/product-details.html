@@ -1,54 +1,40 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{% extends "base.html" %}
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <!-- <link rel= "stylesheet" href= "{{ url_for('static', path='/css/style.css') }}"> -->
-	<link rel="stylesheet" href="static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
-    <title>Hello, world!</title>
-  </head>
-  <body>
-    {% include 'navbar.html' %}
-    <!-- single product details -->
+{% block content %}
+<!-- single product details -->
     <div class="small-container single-product">
         <div class="row">
-            <div class="col-4">
-                <img src="../static/img/Images/list-1.jpg" width="100%" id="productImg">
+			<div class="col-4">
+                <img src="{{ product.productimages[0].path }}" width="100%" id="productImg">
                 <div class="small-img-row">
+					{% for image in product.productimages %}
                     <div class="small-img-col">
-                        <img src="../static/img/Images/list-1.jpg" alt="" width="100%" class="small-img">
+                        <img src="{{ image.path }}" alt="" width="100%" class="small-img">
                     </div>
-                    <div class="small-img-col">
-                        <img src="../static/img/Images/list-2.jpg" alt="" width="100%" class="small-img">
-                    </div>
-                    <div class="small-img-col">
-                        <img src="../static/img/Images/list-3.jpg" alt="" width="100%" class="small-img">
-                    </div>
-                    <div class="small-img-col">
-                        <img src="../static/img/Images/list-4.jpg" alt="" width="100%" class="small-img">
-                    </div>
+					{% endfor %}
                 </div>
             </div>
             <div class="col-6">
-                <p>Home / T-Shirt</p>
-                <h1>EYEBOGLER Regular Fit Men's Cotton T-Shirt</h1>
-                <h4>Rs. 500.00</h4>
-                <select>
-                    <option>Select Size</option>
-                    <option>M</option>
-                    <option>L</option>
-                    <option>XL</option>
-                    <option>XXL</option>
+                <p>
+					{% for category in product.categorys %}
+					{{ category.name }}/
+					{% endfor %}
+				</p>
+                <h1>{{ product.name }}</h1>
+                <h4>{{ product.price }}</h4>
+				{% for _type, names in category_select.items() %}
+				<h4>{{ _type }}</h4>
+				<select>
+					{% for name in names %}
+					<option>{{ name }}</option>
+					{% endfor %}
                 </select>
+				{% endfor %}
+				<p>Quantity Available: {{ product.quantity }}</p>
                 <input type="number" value="1">
                 <button value="Add To Cart" class="addToCartBtn">Add To Cart</button>
                 <h3>Product Details</h3>
-                <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source.</p>
+                <p>{{ product.description }}</p>
             </div>
         </div>
     </div>>
@@ -72,11 +58,4 @@
         }
     </script>
 
-    {% include 'footer.html' %}
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
-</html>
+{% endblock %}

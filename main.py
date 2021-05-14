@@ -188,15 +188,24 @@ async def read_item(request: Request):
 
 @app.get("/products", response_class=HTMLResponse)
 async def read_item(request: Request):
-    products = await get_products()
+    products = await get_products(1)
     for i in range(10):
         # Testing
         products.append(products[0])
     return templates.TemplateResponse("products-catelog.html", {"request": request, "products": products})
 
-@app.get("/product-details", response_class=HTMLResponse)
-async def read_item(request: Request):
-    return templates.TemplateResponse("product-details.html", {"request": request})
+
+@app.get("/product-details/{product_id}", response_class=HTMLResponse)
+async def read_item(request: Request, product_id: int):
+    product = await Product.objects.select_related(["productimages", "categorys"]).get(id=product_id)
+    category_select = {}
+    for cat in product.categorys:
+        category_select.setdefault(cat.categorytype, []).append(cat.name)
+    for type, names in category_select.items():
+        if not names:
+            category_select.pop(type)
+    return templates.TemplateResponse("product-details.html",
+                                      {"request": request, "product": product, "category_select": category_select})
 
 @app.get("/admin", response_class=HTMLResponse)
 async def read_item(request: Request):
