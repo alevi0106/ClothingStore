@@ -1,7 +1,6 @@
 import ormar
 import sqlalchemy
 import databases
-from typing import Optional
 
 from src.settings import DATABASE_URL
 
@@ -65,8 +64,10 @@ class ProductImage(ormar.Model):
         database = database
 
     id: int = ormar.Integer(primary_key=True)
-    product: Product = ormar.ForeignKey(Product, nullable=False)
-    path: str = ormar.String(max_length=255)
+    product: Product = ormar.ForeignKey(Product)
+    path: str = ormar.String(max_length=255, unique=True)
+    sequence: int = ormar.Integer(default=1)  # Sequence 0 will be thumbnail
+    image_tag: str = ormar.String(max_length=10, default="img")
 
 
 class Cart(ormar.Model):
@@ -87,8 +88,9 @@ class Category(ormar.Model):
         database = database
 
     id: int = ormar.Integer(primary_key=True)
-    product: Product = ormar.ForeignKey(Product, nullable=False)
-    name: str = ormar.String(max_length=10)
+    products = ormar.ManyToMany(Product, nullable=True)
+    name: str = ormar.String(max_length=10, unique=True)
+    categorytype: str = ormar.String(max_length=10)
 
 
 class Order(ormar.Model):

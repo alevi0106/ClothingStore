@@ -1,5 +1,6 @@
 import logging
-from typing import List
+from typing import List, Optional
+import ormar
 import uvicorn
 from fastapi import FastAPI
 from fastapi import Depends, FastAPI, HTTPException, status, Form, Request, File, UploadFile
@@ -11,7 +12,7 @@ import aiofiles
 import os
 import time
 
-from sql.models import Product, ProductImage, database, User
+from sql.models import Category, Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -30,6 +31,16 @@ async def startup() -> None:
     db = app.state.database
     if not db.is_connected:
         await db.connect()
+    # Test inserts
+    products = await Product.objects.all()
+    if not products:
+        product = Product(name="testproduct", description="test", price=1000, quantity=10)
+        await product.save()
+        image = ProductImage(product=product, path=os.path.join("static", "product-images", "test.png"))
+        await image.save()
+        cat = Category(name="Trending", categorytype="Newtype")
+        await cat.products.add(product)
+        await cat.save()
 
 
 @app.on_event("shutdown")
@@ -125,14 +136,35 @@ async def admin_login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 
-@app.get("/products", response_model=Product)
-async def get_products():
-    return await Product.objects.limit(20).all()
+@app.get("/listproduct/{page}")
+async def get_products(page):
+    if not page:
+        page = 1
+    return await Product.objects.select_related("productimages").paginate(page).all()
+
+
+@app.get("/search")
+async def search_products(q: Optional[str] = None, categorytype: Optional[str] = None):
+    if not q:
+        return await get_products(1)
+    if categorytype:
+        try:
+            category = await Category.objects.get(categorytype=categorytype)
+        except ormar.NoMatch:
+            category = await Category.objects.filter(Category.categorytype.icontains(categorytype)).get_or_none()
+    else:
+        category = None
+    if category:
+        products = await Product.objects.filter(
+            (Product.name.icontains(q) | Category.name.icontains(q)) & (Category.categorytype == category)).all()
+    else:
+        products = await Product.objects.filter((Product.name.icontains(q) | Category.name.icontains(q))).all()
+    return products
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-adminTemplates = Jinja2Templates(directory="templates\product-admin")
+adminTemplates = Jinja2Templates(directory=os.path.join("templates", "product-admin"))
 
 @app.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
@@ -148,6 +180,14 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return templates.TemplateResponse("cart.html", {"request": request})
 
+
+@app.get("/products", response_class=HTMLResponse)
+async def read_item(request: Request):
+    products = await get_products()
+    for i in range(10):
+        # Testing
+        products.append(products[0])
+    return templates.TemplateResponse("products-catelog.html", {"request": request, "products": products})
 
 @app.get("/product-details", response_class=HTMLResponse)
 async def read_item(request: Request):
@@ -179,10 +219,13 @@ async def add_product(name: str = Form(...),
     product_image_list = []
     for i, image in enumerate(images):
         filename =name + "_" + image.filename + "_" + str(time.time())+ os.path.splitext(image.filename)[1]
-        path = f"static\product_images\{filename}"
+        path = os.path.join("static", "product-images", filename)
         async with aiofiles.open(path, 'wb+') as fp:
             image_bytes = await image.read()
-            await fp.write(image_bytes)
+            if isinstance(image_bytes, bytes):
+                await fp.write(image_bytes)
+            else:
+                await fp.write(image_bytes.encode('utf-8'))
         product_image_list.append(ProductImage(product=product, path=path))
     await product.upsert()
     for product_image in product_image_list:
