@@ -11,7 +11,7 @@ import aiofiles
 import os
 import time
 
-from sql.models import Product, ProductImage, database, User
+from sql.models import Category, Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -143,6 +143,11 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/admin/categories/{ctype}")
+async def read_item(ctype: str):
+    categories = await Category.objects.filter(Category.categorytype == ctype.upper()).all()
+    return {"categories": categories}
+
 
 @app.get("/cart", response_class=HTMLResponse)
 async def read_item(request: Request):
@@ -167,7 +172,9 @@ async def read_item(request: Request):
 
 @app.get("/admin/add-product", response_class=HTMLResponse)
 async def read_item(request: Request):
-    return adminTemplates.TemplateResponse("add-product.html", {"request": request})
+    categories = await Category.objects.all()
+    categories = [category.name for category in categories]
+    return adminTemplates.TemplateResponse("add-product.html", {"request": request, "categories": categories})
 
 @app.post("/admin/add-product", response_model=Product)
 async def add_product(name: str = Form(...),

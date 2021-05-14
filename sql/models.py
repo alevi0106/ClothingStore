@@ -13,7 +13,7 @@ database = databases.Database(DATABASE_URL)
 
 class User(ormar.Model):
     class Meta:
-        tablename = "users"
+        tablename = "Users"
         metadata = metadata
         database = database
 
@@ -26,7 +26,7 @@ class User(ormar.Model):
 
 class UserAddress(ormar.Model):
     class Meta:
-        tablename = "useraddress"
+        tablename = "UserAddress"
         metadata = metadata
         database = database
 
@@ -37,7 +37,7 @@ class UserAddress(ormar.Model):
 
 class Admin(ormar.Model):
     class Meta:
-        tablename = "admins"
+        tablename = "Admins"
         metadata = metadata
         database = database
 
@@ -47,7 +47,7 @@ class Admin(ormar.Model):
 
 class Product(ormar.Model):
     class Meta:
-        tablename = "products"
+        tablename = "Products"
         metadata = metadata
         database = database
 
@@ -60,7 +60,7 @@ class Product(ormar.Model):
 
 class ProductImage(ormar.Model):
     class Meta:
-        tablename = "productimages"
+        tablename = "ProductImages"
         metadata = metadata
         database = database
 
@@ -71,7 +71,7 @@ class ProductImage(ormar.Model):
 
 class Cart(ormar.Model):
     class Meta:
-        tablename = "carts"
+        tablename = "Carts"
         metadata = metadata
         database = database
 
@@ -82,18 +82,28 @@ class Cart(ormar.Model):
 
 class Category(ormar.Model):
     class Meta:
-        tablename = "categories"
+        tablename = "Categories"
         metadata = metadata
         database = database
 
     id: int = ormar.Integer(primary_key=True)
-    product: Product = ormar.ForeignKey(Product, nullable=False)
     name: str = ormar.String(max_length=10)
+    categorytype: str = ormar.String(max_length=10)
+
+class CategoryProductLink(ormar.Model):
+    class Meta:
+        tablename = "CategoryProductLink"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    category: Category = ormar.ForeignKey(Category, nullable=False)
+    product: Product = ormar.ForeignKey(Product, nullable=False)
 
 
 class Order(ormar.Model):
     class Meta:
-        tablename = "orders"
+        tablename = "Orders"
         metadata = metadata
         database = database
 
@@ -105,7 +115,7 @@ class Order(ormar.Model):
 
 class Payment(ormar.Model):
     class Meta:
-        tablename = "payments"
+        tablename = "Payments"
         metadata = metadata
         database = database
 
