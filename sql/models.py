@@ -2,7 +2,6 @@ import ormar
 import sqlalchemy
 import databases
 from typing import Optional
-
 from src.settings import DATABASE_URL
 
 
@@ -20,7 +19,7 @@ class User(ormar.Model):
     id: int = ormar.Integer(primary_key=True)
     email: str = ormar.String(max_length=255, unique=True)
     password: str = ormar.String(max_length=255)
-    phone: str = ormar.String(min_length=10, max_length=10)
+    phone: str = ormar.String(min_length=10, max_length=255)
     confirmed: bool = ormar.Boolean(default=False)
 
 
@@ -66,7 +65,7 @@ class ProductImage(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     product: Product = ormar.ForeignKey(Product, nullable=False)
-    path: str = ormar.String(max_length=255)
+    path: str = ormar.String(max_length=500)
 
 
 class Cart(ormar.Model):
@@ -79,6 +78,14 @@ class Cart(ormar.Model):
     user: User = ormar.ForeignKey(User, nullable=False)
     product: Product = ormar.ForeignKey(Product, nullable=False)
 
+class CategoryType(ormar.Model):
+    class Meta:
+        tablename = "CategoryType"
+        metadata = metadata
+        database = database
+
+    id: int = ormar.Integer(primary_key=True)
+    name: str = ormar.String(max_length=200)
 
 class Category(ormar.Model):
     class Meta:
@@ -87,8 +94,8 @@ class Category(ormar.Model):
         database = database
 
     id: int = ormar.Integer(primary_key=True)
-    name: str = ormar.String(max_length=10)
-    categorytype: str = ormar.String(max_length=10)
+    name: str = ormar.String(max_length=255)
+    categorytype: CategoryType = ormar.ForeignKey(CategoryType, nullable=False)
 
 class CategoryProductLink(ormar.Model):
     class Meta:
@@ -129,6 +136,5 @@ class Payment(ormar.Model):
     description: str = ormar.Text()
     price: float = ormar.Float()
     quantity: int = ormar.Integer()
-
 
 metadata.create_all(engine)

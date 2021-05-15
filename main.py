@@ -1,4 +1,5 @@
 import logging
+from src.seeding import seed_category_type_data, seed_data
 from typing import List
 import uvicorn
 from fastapi import FastAPI
@@ -11,7 +12,7 @@ import aiofiles
 import os
 import time
 
-from sql.models import Category, Product, ProductImage, database, User
+from sql.models import Category, CategoryProductLink, CategoryType, Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -30,6 +31,7 @@ async def startup() -> None:
     db = app.state.database
     if not db.is_connected:
         await db.connect()
+    await seed_data()
 
 
 @app.on_event("shutdown")
@@ -145,8 +147,14 @@ async def read_item(request: Request):
 
 @app.get("/admin/categories/{ctype}")
 async def read_item(ctype: str):
-    categories = await Category.objects.filter(Category.categorytype == ctype.upper()).all()
-    return {"categories": categories}
+    catType = await CategoryType.objects.get(CategoryType.name == ctype.upper())
+    categories = await Category.objects.all()
+    # categories = await Category.objects.all(Category.categorytype.id == catType.id)
+    new_categories = []
+    for category in categories:
+        if(category.categorytype.id == catType.id):
+            new_categories.append(category)
+    return {"categories": new_categories}
 
 
 @app.get("/cart", response_class=HTMLResponse)
@@ -160,7 +168,7 @@ async def read_item(request: Request):
 
 @app.get("/admin", response_class=HTMLResponse)
 async def read_item(request: Request):
-    return adminTemplates.TemplateResponse("index.html", {"request": request})
+    return adminTemplates.TemplateResponse("products.html", {"request": request})
 
 @app.get("/admin/account", response_class=HTMLResponse)
 async def read_item(request: Request):
@@ -198,5 +206,3 @@ async def add_product(name: str = Form(...),
 
 if __name__ == '__main__':
     uvicorn.run(app, host="127.0.0.1", port=8000)
-
-
