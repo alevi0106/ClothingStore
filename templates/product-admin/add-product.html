@@ -112,45 +112,19 @@
     </div>
     <script>
       $(document).ready(function() {
-        $('#size').multiselect({
+        array = ['size', 'gender', 'tag', 'color']
+        for (index = 0; index < array.length; index++) {
+          $('#'+array[index]).multiselect({
           includeSelectAllOption: true,
           enableFiltering: true,
           enableCaseInsensitiveFiltering: true,
           buttonWidth:'260px',
           filterPlaceholder:'Search Here..'
-        });
-        PopulateDropDownList('size');
+          });
+          PopulateDropDownList(array[index]);
+        }
       });
-      $(document).ready(function() {
-        $('#gender').multiselect({
-          includeSelectAllOption: true,
-          enableFiltering: true,
-          enableCaseInsensitiveFiltering: true,
-          buttonWidth:'260px',
-          filterPlaceholder:'Search Here..'
-        });
-        PopulateDropDownList('gender');
-      });
-      $(document).ready(function() {
-        $('#tag').multiselect({
-          includeSelectAllOption: true,
-          enableFiltering: true,
-          enableCaseInsensitiveFiltering: true,
-          buttonWidth:'260px',
-          filterPlaceholder:'Search Here..'
-        });
-        PopulateDropDownList('tag');
-      });
-      $(document).ready(function() {
-        $('#color').multiselect({
-          includeSelectAllOption: true,
-          enableFiltering: true,
-          enableCaseInsensitiveFiltering: true,
-          buttonWidth:'260px',
-          filterPlaceholder:'Search Here..'
-        });
-        PopulateDropDownList('color');
-      });
+      
       function previewImages() {
         var preview = document.querySelector('#preview');
         if (this.files) {
