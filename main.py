@@ -1,6 +1,6 @@
 import logging
 from src.seeding import seed_category_type_data, seed_data
-from typing import List
+from typing import Optional, List
 import uvicorn
 from fastapi import FastAPI
 from fastapi import Depends, FastAPI, HTTPException, status, Form, Request, File, UploadFile
@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 import aiofiles
 import os
 import time
+from pydantic import BaseModel, Field
 
 from sql.models import Category, CategoryProductLink, CategoryType, Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
@@ -178,22 +179,27 @@ async def read_item(request: Request):
 async def read_item(request: Request):
     return adminTemplates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/admin/add-product", response_class=HTMLResponse)
+@app.get("/admin/save-product", response_class=HTMLResponse)
 async def read_item(request: Request):
     categories = await Category.objects.all()
     categories = [category.name for category in categories]
-    return adminTemplates.TemplateResponse("add-product.html", {"request": request, "categories": categories})
+    return adminTemplates.TemplateResponse("save-product.html", {"request": request, "categories": categories})
 
-@app.post("/admin/add-product", response_model=Product)
-async def add_product(name: str = Form(...),
+@app.post("/admin/save-product", response_model=Product)
+async def save_product(productId: int = Form(int),
+                      productName: str = Form(...),
                       description: str = Form(...),
                       price: float = Form(..., ge=0.0),
                       quantity: int = Form(..., ge=0),
+                      sizes : List[int] = Form(List[int]),
+                      genders : List[int] = Form(List[int]),
+                      colors : List[int] = Form(List[int]),
+                      tags : List[int] = Form(List[int]),
                       images: List[UploadFile] = File(...)):
-    product = Product(name=name, description=description, price=price, quantity=quantity)
+    product = Product(name= productName, description=description, price=price, quantity=quantity)
     product_image_list = []
     for i, image in enumerate(images):
-        filename =name + "_" + image.filename + "_" + str(time.time())+ os.path.splitext(image.filename)[1]
+        filename = productName + "_" + image.filename + "_" + str(time.time())+ os.path.splitext(image.filename)[1]
         path = f"static\product_images\{filename}"
         async with aiofiles.open(path, 'wb+') as fp:
             image_bytes = await image.read()
@@ -202,7 +208,19 @@ async def add_product(name: str = Form(...),
     await product.upsert()
     for product_image in product_image_list:
         await product_image.upsert()
+    for size in sizes:
+        InsertToCategoryProductLink(size, product)
+    for gender in genders:
+        InsertToCategoryProductLink(gender, product)
+    for color in colors:
+        InsertToCategoryProductLink(color, product)
+    for tag in tags:
+        InsertToCategoryProductLink(tag, product)
     return product
+
+async def InsertToCategoryProductLink(categoryId, product):
+    catProdLink = CategoryProductLink(category= categoryId, product= product)
+    await catProdLink.upsert()
 
 if __name__ == '__main__':
     uvicorn.run(app, host="127.0.0.1", port=8000)
