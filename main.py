@@ -186,15 +186,15 @@ async def read_item(request: Request):
     return adminTemplates.TemplateResponse("save-product.html", {"request": request, "categories": categories})
 
 @app.post("/admin/save-product", response_model=Product)
-async def save_product(productId: int = Form(int),
+async def save_product(productId: int = Form(None),
                       productName: str = Form(...),
                       description: str = Form(...),
                       price: float = Form(..., ge=0.0),
                       quantity: int = Form(..., ge=0),
-                      sizes : List[int] = Form(List[int]),
-                      genders : List[int] = Form(List[int]),
-                      colors : List[int] = Form(List[int]),
-                      tags : List[int] = Form(List[int]),
+                      sizes : List[int] = Form([]),
+                      genders : List[int] = Form([]),
+                      colors : List[int] = Form([]),
+                      tags : List[int] = Form([]),
                       images: List[UploadFile] = File(...)):
     product = Product(name= productName, description=description, price=price, quantity=quantity)
     product_image_list = []
