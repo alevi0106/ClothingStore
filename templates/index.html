@@ -66,67 +66,20 @@
     <!-- end of carousel -->
 
     <section class="collection">
-    <div class="container py-5">
-        <h1 class="text-cnter">New Collection</h1>
-        <div class="row py-5">
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/1.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/2.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/3.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/4.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/5.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/6.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card">
-            <img src="../static/img/Images/7.jpg" class="img-fluid mb-3" alt="">
-            <input type="button" value="Add To Cart">
-            <h5>PRODUCT NAME</h5>
-            <p><small><del>Rs.248 </del><span>Rs.199</span></small></p>
-            </div>
-        </div>
-        </div>
-    </div>
+		<div class="container py-5">
+			<div id="product-grid" class="d-inline-flex flex-wrap">
+				{% for product in products %}
+				<div class="card col-lg-3">
+					<img src="{{ product.productimages[0].path }}" class="card-img-top" />
+					<div class="card-body">
+						<!-- <h5 class="card-title">{{ product.name }}</h5> -->
+						<p class="card-text">{{ product.name }}</p>
+						<a href="/product-details/{{ product.id }}" class="btn btn-primary">Details</a>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
     </section>
 
 {% endblock %}

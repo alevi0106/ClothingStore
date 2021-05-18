@@ -65,7 +65,7 @@ class ProductImage(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     product: Product = ormar.ForeignKey(Product)
-    path: str = ormar.String(max_length=255, unique=True)
+    path: str = ormar.String(max_length=255)
     sequence: int = ormar.Integer(default=1)  # Sequence 0 will be thumbnail
     image_tag: str = ormar.String(max_length=10, default="img")
 
@@ -77,8 +77,10 @@ class Cart(ormar.Model):
         database = database
 
     id: int = ormar.Integer(primary_key=True)
-    user: User = ormar.ForeignKey(User, nullable=False)
+    user: User = ormar.ForeignKey(User, nullable=False, unique=True)
     product: Product = ormar.ForeignKey(Product, nullable=False)
+    quantity: int = ormar.Integer()
+    price: float = ormar.Float()
 
 
 class Category(ormar.Model):

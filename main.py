@@ -12,7 +12,7 @@ import aiofiles
 import os
 import time
 
-from sql.models import Category, Product, ProductImage, database, User
+from sql.models import Cart, Category, Product, ProductImage, database, User
 from sql.dbaccess import get_admin_user, get_confirmed_user, get_unconfirmed_user
 from src.authentication import create_email_confirmation_link, verify_password, get_password_hash, create_access_token, extract_id_from_token
 from src.email_validation import sendemail
@@ -32,15 +32,15 @@ async def startup() -> None:
     if not db.is_connected:
         await db.connect()
     # Test inserts
-    products = await Product.objects.all()
-    if not products:
-        product = Product(name="testproduct", description="test", price=1000, quantity=10)
-        await product.save()
-        image = ProductImage(product=product, path=os.path.join("static", "product-images", "test.png"))
-        await image.save()
-        cat = Category(name="Trending", categorytype="Newtype")
-        await cat.products.add(product)
-        await cat.save()
+    # products = await Product.objects.all()
+    # if not products:
+    #     product = Product(name="testproduct", description="test", price=1000, quantity=10)
+    #     await product.save()
+    #     image = ProductImage(product=product, path=os.path.join("/", "static", "product-images", "test.png"))
+    #     await image.save()
+    #     cat = Category(name="Trending", categorytype="Newtype")
+    #     await cat.products.add(product)
+    #     await cat.save()
 
 
 @app.on_event("shutdown")
@@ -72,7 +72,6 @@ async def confirm_account(token: str):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},)
-
     user = await get_unconfirmed_user(email)
     user.confirmed = True
     await user.update()
@@ -168,7 +167,8 @@ adminTemplates = Jinja2Templates(directory=os.path.join("templates", "product-ad
 
 @app.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    products = await get_products(1)
+    return templates.TemplateResponse("index.html", {"request": request, "products": products})
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -189,9 +189,6 @@ async def read_item(request: Request):
 @app.get("/products", response_class=HTMLResponse)
 async def read_item(request: Request):
     products = await get_products(1)
-    for i in range(10):
-        # Testing
-        products.append(products[0])
     return templates.TemplateResponse("products-catelog.html", {"request": request, "products": products})
 
 
@@ -206,6 +203,19 @@ async def read_item(request: Request, product_id: int):
             category_select.pop(type)
     return templates.TemplateResponse("product-details.html",
                                       {"request": request, "product": product, "category_select": category_select})
+
+
+@app.post("/add-to-cart", response_model=Cart)
+async def add_to_cart(product_id: int, quantity: int, price: float, user: User = Depends(get_user)):
+    try:
+        cart = await Cart.objects.filter((Cart.user == user) | (Cart.product == product_id)).get()
+        cart.quantity = quantity
+        cart.price = price
+    except ormar.NoMatch:
+        cart = Cart(user=user, product=product_id, quantity=quantity, price=price)
+    await cart.upsert()
+    return cart
+
 
 @app.get("/admin", response_class=HTMLResponse)
 async def read_item(request: Request):
